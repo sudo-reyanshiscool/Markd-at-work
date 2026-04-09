@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
+import { useToast } from "@/components/toast";
 
 interface DashboardData {
   counts: {
@@ -32,12 +33,16 @@ const statusColors: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<DashboardData>("/api/dashboard").then(setData).finally(() => setLoading(false));
-  }, []);
+    api.get<DashboardData>("/api/dashboard")
+      .then(setData)
+      .catch(() => toast("Failed to load dashboard data", "error"))
+      .finally(() => setLoading(false));
+  }, [toast]);
 
   if (loading) return <div className="animate-pulse">Loading dashboard...</div>;
   if (!data) return <div>Failed to load dashboard</div>;

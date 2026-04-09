@@ -11,7 +11,8 @@ const navItems = [
   { href: "/dashboard/materials", label: "Raw Materials" },
   { href: "/dashboard/orders", label: "Orders" },
   { href: "/dashboard/stock", label: "Stock Movements" },
-];
+  { href: "/dashboard/users", label: "Users", adminOnly: true },
+] as const;
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -37,6 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
+            if ("adminOnly" in item && item.adminOnly && session.user?.role !== "ADMIN") return null;
             const active = pathname === item.href;
             return (
               <Link
@@ -56,6 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="p-4 border-t">
           <p className="text-xs text-gray-500 truncate">{session.user?.name}</p>
           <p className="text-xs text-gray-400 truncate">{session.user?.email}</p>
+          <span className="inline-block mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{session.user?.role}</span>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="mt-2 text-xs text-red-500 hover:underline"

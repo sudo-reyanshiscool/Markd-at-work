@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api-client";
+import { useToast } from "@/components/toast";
 
 interface RawMaterial {
   id: string;
@@ -18,39 +19,58 @@ interface RawMaterial {
 const emptyForm = { name: "", sku: "", category: "", quantity: 0, unit: "meters", minStock: 0, costPerUnit: 0, supplier: "" };
 
 export default function MaterialsPage() {
+  const { toast } = useToast();
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     const params = search ? `?search=${encodeURIComponent(search)}` : "";
-    api.get<RawMaterial[]>(`/api/materials${params}`).then(setMaterials).finally(() => setLoading(false));
-  }, [search]);
+    api.get<RawMaterial[]>(`/api/materials${params}`)
+      .then(setMaterials)
+      .catch(() => toast("Failed to load materials", "error"))
+      .finally(() => setLoading(false));
+  }, [search, toast]);
 
   useEffect(() => { load(); }, [load]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data = { ...form, quantity: Number(form.quantity), minStock: Number(form.minStock), costPerUnit: Number(form.costPerUnit) };
-    if (editId) {
-      await api.patch(`/api/materials/${editId}`, data);
-    } else {
-      await api.post("/api/materials", data);
+    setSubmitting(true);
+    try {
+      const data = { ...form, quantity: Number(form.quantity), minStock: Number(form.minStock), costPerUnit: Number(form.costPerUnit) };
+      if (editId) {
+        await api.patch(`/api/materials/${editId}`, data);
+        toast("Material updated", "success");
+      } else {
+        await api.post("/api/materials", data);
+        toast("Material created", "success");
+      }
+      setForm(emptyForm);
+      setEditId(null);
+      setShowForm(false);
+      load();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed to save material", "error");
+    } finally {
+      setSubmitting(false);
     }
-    setForm(emptyForm);
-    setEditId(null);
-    setShowForm(false);
-    load();
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this material?")) return;
-    await api.delete(`/api/materials/${id}`);
-    load();
+    try {
+      await api.delete(`/api/materials/${id}`);
+      toast("Material deleted", "success");
+      load();
+    } catch {
+      toast("Failed to delete material", "error");
+    }
   }
 
   function handleEdit(mat: RawMaterial) {
@@ -69,18 +89,47 @@ export default function MaterialsPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white border rounded-xl p-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded-lg px-3 py-2 text-sm" required />
-          <input placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="border rounded-lg px-3 py-2 text-sm" required />
-          <input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="border rounded-lg px-3 py-2 text-sm" required />
-          <input type="number" placeholder="Quantity" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} className="border rounded-lg px-3 py-2 text-sm" />
-          <input placeholder="Unit" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="border rounded-lg px-3 py-2 text-sm" />
-          <input type="number" placeholder="Min Stock" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: Number(e.target.value) })} className="border rounded-lg px-3 py-2 text-sm" />
-          <input type="number" step="0.01" placeholder="Cost/Unit" value={form.costPerUnit} onChange={(e) => setForm({ ...form, costPerUnit: Number(e.target.value) })} className="border rounded-lg px-3 py-2 text-sm" />
-          <input placeholder="Supplier" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} className="border rounded-lg px-3 py-2 text-sm" />
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-            {editId ? "Update" : "Create"}
-          </button>
+        <form onSubmit={handleSubmit} className="bg-white border rounded-xl p-6 mb-6">
+          <h2 className="font-semibold mb-4">{editId ? "Edit Material" : "New Raw Material"}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Name *</label>
+              <input placeholder="e.g. Cotton Fabric - White" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded-lg px-3 py-2 text-sm w-full" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">SKU *</label>
+              <input placeholder="e.g. RM-COT-WHT" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="border rounded-lg px-3 py-2 text-sm w-full" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Category *</label>
+              <input placeholder="e.g. Fabric" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="border rounded-lg px-3 py-2 text-sm w-full" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Quantity</label>
+              <input type="number" min="0" step="0.01" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} className="border rounded-lg px-3 py-2 text-sm w-full" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Unit</label>
+              <input placeholder="meters" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="border rounded-lg px-3 py-2 text-sm w-full" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Min Stock Alert</label>
+              <input type="number" min="0" step="0.01" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: Number(e.target.value) })} className="border rounded-lg px-3 py-2 text-sm w-full" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Cost per Unit (Rs.)</label>
+              <input type="number" min="0" step="0.01" value={form.costPerUnit} onChange={(e) => setForm({ ...form, costPerUnit: Number(e.target.value) })} className="border rounded-lg px-3 py-2 text-sm w-full" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Supplier</label>
+              <input placeholder="Supplier name" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} className="border rounded-lg px-3 py-2 text-sm w-full" />
+            </div>
+            <div className="flex items-end">
+              <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 w-full">
+                {submitting ? "Saving..." : editId ? "Update" : "Create"}
+              </button>
+            </div>
+          </div>
         </form>
       )}
 
@@ -89,7 +138,9 @@ export default function MaterialsPage() {
       </div>
 
       {loading ? (
-        <div className="animate-pulse">Loading...</div>
+        <div className="bg-white border rounded-xl overflow-hidden">
+          {[1,2,3,4].map((i) => <div key={i} className="h-12 border-b animate-pulse" />)}
+        </div>
       ) : (
         <div className="bg-white border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -107,11 +158,14 @@ export default function MaterialsPage() {
             <tbody className="divide-y">
               {materials.map((mat) => (
                 <tr key={mat.id} className={mat.quantity <= mat.minStock ? "bg-red-50" : ""}>
-                  <td className="px-4 py-3">{mat.name}</td>
+                  <td className="px-4 py-3 font-medium">{mat.name}</td>
                   <td className="px-4 py-3 text-gray-500">{mat.sku}</td>
                   <td className="px-4 py-3">{mat.category}</td>
-                  <td className="px-4 py-3 text-right font-medium">{mat.quantity} {mat.unit}</td>
-                  <td className="px-4 py-3 text-right">{mat.costPerUnit}</td>
+                  <td className="px-4 py-3 text-right">
+                    <span className={`font-medium ${mat.quantity <= mat.minStock ? "text-red-600" : ""}`}>{mat.quantity}</span>
+                    <span className="text-gray-400 ml-1">{mat.unit}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">Rs. {mat.costPerUnit}</td>
                   <td className="px-4 py-3">{mat.supplier ?? "—"}</td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <button onClick={() => handleEdit(mat)} className="text-blue-600 hover:underline">Edit</button>
