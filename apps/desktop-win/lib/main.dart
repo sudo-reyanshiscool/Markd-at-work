@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/factory_login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,10 +17,6 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MarkdWinApp()));
 }
 
-final supabaseProvider = Provider<SupabaseClient>(
-  (ref) => Supabase.instance.client,
-);
-
 class MarkdWinApp extends StatelessWidget {
   const MarkdWinApp({super.key});
 
@@ -31,9 +28,7 @@ class MarkdWinApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: const Scaffold(
-        body: Center(child: Text('Markd at Work — Factory')),
-      ),
+      home: const FactoryLoginScreen(),
     );
   }
 }
