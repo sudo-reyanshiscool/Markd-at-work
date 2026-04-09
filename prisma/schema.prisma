@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & Users ───────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  WORKER
+}
+
+model User {
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  hashedPassword String
+  role           Role     @default(WORKER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orders         Order[]
+  stockMovements StockMovement[]
+
+  @@map("users")
+}
+
+// ─── Inventory (Finished Garments) ──────────────────────────
+
+model InventoryItem {
+  id          String   @id @default(cuid())
+  name        String
+  sku         String   @unique
+  category    String
+  quantity    Int      @default(0)
+  unit        String   @default("pcs")
+  minStock    Int      @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+
+  @@map("inventory_items")
+}
+
+// ─── Raw Materials ──────────────────────────────────────────
+
+model RawMaterial {
+  id          String   @id @default(cuid())
+  name        String
+  sku         String   @unique
+  category    String
+  quantity    Float    @default(0)
+  unit        String   @default("meters")
+  minStock    Float    @default(0)
+  costPerUnit Float    @default(0)
+  supplier    String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stockMovements StockMovement[]
+
+  @@map("raw_materials")
+}
+
+// ─── Orders ─────────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique
+  customerName   String
+  customerPhone  String?
+  status         OrderStatus @default(PENDING)
+  notes          String?
+  totalAmount    Float       @default(0)
+  deadline       DateTime?
+  createdById    String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  createdBy User        @relation(fields: [createdById], references: [id])
+  items     OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String @id @default(cuid())
+  orderId         String
+  inventoryItemId String
+  quantity        Int
+  unitPrice       Float  @default(0)
+  notes           String?
+
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─── Stock Movements ────────────────────────────────────────
+
+enum MovementType {
+  INFLOW
+  OUTFLOW
+  ADJUSTMENT
+}
+
+enum StockItemType {
+  INVENTORY
+  RAW_MATERIAL
+}
+
+model StockMovement {
+  id              String        @id @default(cuid())
+  itemType        StockItemType
+  inventoryItemId String?
+  rawMaterialId   String?
+  movementType    MovementType
+  quantity        Float
+  reason          String?
+  reference       String?
+  createdById     String
+  createdAt       DateTime      @default(now())
+
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  rawMaterial   RawMaterial?   @relation(fields: [rawMaterialId], references: [id])
+  createdBy     User           @relation(fields: [createdById], references: [id])
+
+  @@map("stock_movements")
+}
