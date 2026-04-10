@@ -53,8 +53,7 @@ export default function LoginPage() {
       {/* Right panel — login form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8">
+          <div className="mb-8">
             <Image src="/logo-signifier-black.png" alt="AG" width={48} height={48} className="object-contain" />
           </div>
 
