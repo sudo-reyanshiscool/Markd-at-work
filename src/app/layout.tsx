@@ -11,6 +11,10 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Markd at Work — Factory Management",
   description: "Internal backend management for Aditya Gupta garment manufacturing",
+  icons: {
+    icon: "/logo-round-black.png",
+    apple: "/logo-round-black.png",
+  },
 };
 
 export default function RootLayout({

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { redirect } from "next/navigation";
@@ -29,9 +30,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center font-bold text-lg text-white animate-pulse">M</div>
-          <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+        <div className="flex flex-col items-center gap-4">
+          <Image src="/logo-signifier-black.png" alt="AG" width={48} height={48} className="opacity-80 animate-pulse" />
+          <div className="animate-spin h-5 w-5 border-2 border-slate-400 border-t-transparent rounded-full" />
         </div>
       </div>
     );
@@ -51,11 +52,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-[260px] bg-slate-900 text-slate-300 flex flex-col shrink-0">
         {/* Logo */}
         <div className="px-6 py-5 flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm text-white">M</div>
-          <div>
-            <p className="text-white font-semibold text-sm leading-none">Markd at Work</p>
-            <p className="text-slate-500 text-xs mt-0.5">Factory Management</p>
-          </div>
+          <Image src="/logo-signifier-white.png" alt="AG" width={40} height={40} className="object-contain" />
+          <p className="text-slate-500 text-xs">Factory Management</p>
         </div>
 
         {/* Nav */}

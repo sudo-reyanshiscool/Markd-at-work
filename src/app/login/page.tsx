@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,10 +36,7 @@ export default function LoginPage() {
       {/* Left panel — brand */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex-col justify-between p-12">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center font-bold text-lg">M</div>
-            <span className="text-xl font-bold tracking-tight">Markd at Work</span>
-          </div>
+          <Image src="/logo-signifier-white.png" alt="AG" width={56} height={56} className="object-contain" />
         </div>
         <div>
           <h1 className="text-4xl font-bold leading-tight mb-4">
@@ -56,9 +54,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center font-bold text-lg text-white">M</div>
-            <span className="text-xl font-bold tracking-tight">Markd at Work</span>
+          <div className="lg:hidden mb-8">
+            <Image src="/logo-signifier-black.png" alt="AG" width={48} height={48} className="object-contain" />
           </div>
 
           <h2 className="text-2xl font-bold mb-1">Welcome back</h2>
